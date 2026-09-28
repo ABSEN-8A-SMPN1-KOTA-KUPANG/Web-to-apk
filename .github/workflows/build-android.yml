@@ -1,7 +1,5 @@
 name: Build Android APK
 
-
-
 on:
 
   workflow_dispatch:
@@ -66,18 +64,8 @@ on:
         
         type: choice
         
-        options:
+        options: [nova, orbit, pulse, arc]
         
-          - nova
-          
-          - orbit
-          
-          - pulse
-          
-          - arc
-          
-
-
 jobs:
 
   build:
@@ -90,12 +78,8 @@ jobs:
       
     steps:
     
-      - name: Checkout
+      - uses: actions/checkout@v4
       
-        uses: actions/checkout@v4
-        
-
-
       - name: Set up Java
       
         uses: actions/setup-java@v4
@@ -106,33 +90,25 @@ jobs:
           
           java-version: '17'
           
-          cache: gradle
+          cache: 'none'
           
-
-
       - name: Set up Gradle
       
-        uses: gradle/gradle-build-action@v3
+        uses: gradle/actions/setup-gradle@v4
         
         with:
         
           gradle-version: '8.9'
           
-
-
-      - name: Set up Android SDK
+          cache-disabled: true
+          
+      - uses: android-actions/setup-android@v3
       
-        uses: android-actions/setup-android@v3
-        
-
-
       - name: Install Android SDK packages
       
         run: sdkmanager "platform-tools" "platforms;android-35" "build-tools;35.0.0"
         
-
-
-      - name: Generate build configuration
+      - name: Generate configuration
       
         env:
         
@@ -140,74 +116,26 @@ jobs:
           
           WEB_URL: ${{ inputs.web_url }}
           
-          ICON: ${{ inputs.icon }}
-          
         run: |
         
           unzip -o worker-source.zip
           
-          python3 - <<'PY'
+          mkdir -p app/src/main/res/values
           
-          import html, os
+          printf '%s\n' '<?xml version="1.0" encoding="utf-8"?>' '<resources>' "<string name=\"app_name\">${APP_NAME}</string>" "<string name=\"web_url\">${WEB_URL}</string>" '<color name="icon_accent">#8B5CF6</color>' '</resources>' > app/src/main/res/values/build-config.xml
           
-          app_name = html.escape(os.environ['APP_NAME'])
-          
-          web_url = html.escape(os.environ['WEB_URL'])
-          
-          icon = os.environ['ICON']
-          
-          colors = {'nova': '#8B5CF6', 'orbit': '#2563EB', 'pulse': '#10B981', 'arc': '#F59E0B'}
-          
-          color = colors.get(icon, colors['nova'])
-          
-          values = f'''<?xml version="1.0" encoding="utf-8"?>
-          
-          <resources>
-          
-              <string name="app_name">{app_name}</string>
-              
-              <string name="web_url">{web_url}</string>
-              
-              <color name="icon_accent">{color}</color>
-              
-          </resources>
-          
-          '''
-          
-          with open('app/src/main/res/values/build-config.xml', 'w') as f:
-          
-              f.write(values)
-              
-          PY
-          
-
-
       - name: Build installable debug APK
       
         run: |
         
-          gradle --no-daemon --stacktrace \
+          gradle --no-daemon --stacktrace -PpackageName="${{ inputs.package_name }}" -PversionName="${{ inputs.version_name }}" -PversionCode="${{ inputs.version_code }}" assembleDebug
           
-            -PpackageName="${{ inputs.package_name }}" \
-            
-            -PversionName="${{ inputs.version_name }}" \
-            
-            -PversionCode="${{ inputs.version_code }}" \
-            
-            assembleDebug
-            
-
-
       - name: Rename APK
       
         run: cp app/build/outputs/apk/debug/app-debug.apk "${{ inputs.app_name }}-${{ inputs.version_name }}.apk"
         
-
-
-      - name: Upload APK artifact
+      - uses: actions/upload-artifact@v4
       
-        uses: actions/upload-artifact@v4
-        
         with:
         
           name: android-apk-${{ inputs.version_name }}
@@ -216,32 +144,6 @@ jobs:
           
           if-no-files-found: error
           
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
