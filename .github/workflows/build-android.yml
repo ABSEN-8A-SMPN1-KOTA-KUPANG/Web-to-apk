@@ -1,0 +1,314 @@
+name: Build Android APK
+
+
+
+on:
+
+  workflow_dispatch:
+  
+    inputs:
+    
+      web_url:
+      
+        description: Website URL to wrap
+        
+        required: true
+        
+        type: string
+        
+      app_name:
+      
+        description: Android application name
+        
+        required: true
+        
+        default: Forgekit App
+        
+        type: string
+        
+      package_name:
+      
+        description: Android package/application ID
+        
+        required: true
+        
+        default: com.forgekit.app
+        
+        type: string
+        
+      version_name:
+      
+        description: Human-readable version
+        
+        required: true
+        
+        default: 1.0.0
+        
+        type: string
+        
+      version_code:
+      
+        description: Numeric Android version code
+        
+        required: true
+        
+        default: '1'
+        
+        type: string
+        
+      icon:
+      
+        description: Icon preset
+        
+        required: true
+        
+        default: nova
+        
+        type: choice
+        
+        options:
+        
+          - nova
+          
+          - orbit
+          
+          - pulse
+          
+          - arc
+          
+
+
+jobs:
+
+  build:
+  
+    runs-on: ubuntu-latest
+    
+    permissions:
+    
+      contents: read
+      
+    steps:
+    
+      - name: Checkout
+      
+        uses: actions/checkout@v4
+        
+
+
+      - name: Set up Java
+      
+        uses: actions/setup-java@v4
+        
+        with:
+        
+          distribution: temurin
+          
+          java-version: '17'
+          
+          cache: gradle
+          
+
+
+      - name: Set up Gradle
+      
+        uses: gradle/gradle-build-action@v3
+        
+        with:
+        
+          gradle-version: '8.9'
+          
+
+
+      - name: Set up Android SDK
+      
+        uses: android-actions/setup-android@v3
+        
+
+
+      - name: Install Android SDK packages
+      
+        run: sdkmanager "platform-tools" "platforms;android-35" "build-tools;35.0.0"
+        
+
+
+      - name: Generate build configuration
+      
+        env:
+        
+          APP_NAME: ${{ inputs.app_name }}
+          
+          WEB_URL: ${{ inputs.web_url }}
+          
+          ICON: ${{ inputs.icon }}
+          
+        run: |
+        
+          unzip -o worker-source.zip
+          
+          python3 - <<'PY'
+          
+          import html, os
+          
+          app_name = html.escape(os.environ['APP_NAME'])
+          
+          web_url = html.escape(os.environ['WEB_URL'])
+          
+          icon = os.environ['ICON']
+          
+          colors = {'nova': '#8B5CF6', 'orbit': '#2563EB', 'pulse': '#10B981', 'arc': '#F59E0B'}
+          
+          color = colors.get(icon, colors['nova'])
+          
+          values = f'''<?xml version="1.0" encoding="utf-8"?>
+          
+          <resources>
+          
+              <string name="app_name">{app_name}</string>
+              
+              <string name="web_url">{web_url}</string>
+              
+              <color name="icon_accent">{color}</color>
+              
+          </resources>
+          
+          '''
+          
+          with open('app/src/main/res/values/build-config.xml', 'w') as f:
+          
+              f.write(values)
+              
+          PY
+          
+
+
+      - name: Build installable debug APK
+      
+        run: |
+        
+          gradle --no-daemon --stacktrace \
+          
+            -PpackageName="${{ inputs.package_name }}" \
+            
+            -PversionName="${{ inputs.version_name }}" \
+            
+            -PversionCode="${{ inputs.version_code }}" \
+            
+            assembleDebug
+            
+
+
+      - name: Rename APK
+      
+        run: cp app/build/outputs/apk/debug/app-debug.apk "${{ inputs.app_name }}-${{ inputs.version_name }}.apk"
+        
+
+
+      - name: Upload APK artifact
+      
+        uses: actions/upload-artifact@v4
+        
+        with:
+        
+          name: android-apk-${{ inputs.version_name }}
+          
+          path: "${{ inputs.app_name }}-${{ inputs.version_name }}.apk"
+          
+          if-no-files-found: error
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
