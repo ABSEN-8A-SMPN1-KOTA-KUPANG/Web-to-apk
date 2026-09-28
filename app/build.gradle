@@ -1,0 +1,88 @@
+plugins {
+  
+    id 'com.android.application'
+  
+}
+
+
+
+android {
+  
+    namespace 'com.forgekit.webapk'
+  
+    compileSdk 35
+  
+
+  
+    defaultConfig {
+      
+        applicationId project.findProperty('packageName') ?: 'com.forgekit.webapk'
+      
+        minSdk 26
+      
+        targetSdk 35
+      
+        versionCode (project.findProperty('versionCode') ?: '1').toInteger()
+      
+        versionName project.findProperty('versionName') ?: '1.0.0'
+      
+    }
+  
+
+  
+    buildTypes {
+      
+        debug {
+          
+            minifyEnabled false
+          
+        }
+      
+        release {
+          
+            minifyEnabled false
+          
+            debuggable false
+          
+        }
+      
+    }
+  
+}
+
+
+
+dependencies {
+  
+    implementation 'androidx.appcompat:appcompat:1.7.0'
+  
+    implementation 'androidx.webkit:webkit:1.12.1'
+  
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
